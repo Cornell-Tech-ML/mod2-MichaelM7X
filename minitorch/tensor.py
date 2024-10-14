@@ -324,9 +324,10 @@ class Tensor:
         new_data = self._tensor.broadcast_to(shape)
         return Tensor(new_data, backend=self.backend)
 
-    def all(self) -> bool:
-        """Check if all elements in the tensor are True (non-zero)."""
-        return bool(np.all(self.to_numpy()))
+    def all(self) -> Tensor:
+        """Return a Tensor of shape (1,) with the logical AND over all elements."""
+        result = float(np.all(self.to_numpy()))
+        return Tensor.make([result], (1,), backend=self.backend)
 
     def is_close(self, other: Tensor, atol: float = 1e-8) -> Tensor:
         """Check if this tensor is element-wise close to another tensor."""
