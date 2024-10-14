@@ -146,6 +146,7 @@ def test_view() -> None:
     assert t2.shape == (6, 1)
     t2 = t2.view(2, 3)
 
+
 @given(tensors())
 def test_back_view(t1: Tensor) -> None:
     """Test the graident of view"""

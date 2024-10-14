@@ -16,6 +16,7 @@ from .tensor_functions import (
     Inv,
     MatMul,
     Mul,
+    Neg,
     Add,
     Sigmoid,
     ReLU,
@@ -24,7 +25,6 @@ from .tensor_functions import (
     LT,
     EQ,
 )
-from .operators import Neg
 
 if TYPE_CHECKING:
     from typing import Any, Iterable, List, Optional, Sequence, Tuple, Type, Union
@@ -252,9 +252,6 @@ class Tensor:
     def __truediv__(self, b: TensorLike) -> Tensor:
         return Mul.apply(self, Inv.apply(self._ensure_tensor(b)))
 
-    def __rtruediv__(self, b: TensorLike) -> Tensor:
-        return Mul.apply(self._ensure_tensor(b), Inv.apply(self))
-
     def __matmul__(self, b: Tensor) -> Tensor:
         """Not used until Module 3"""
         return MatMul.apply(self, b)
@@ -336,7 +333,7 @@ class Tensor:
         result = (self - other).abs() < atol
         result._is_boolean = True  # Custom attribute to indicate it's a boolean tensor
         return result
-    
+
     def mean(self, dim: Optional[int] = None) -> Tensor:
         """Compute the mean over all elements or along a dimension."""
         total = self.sum(dim)
@@ -366,5 +363,3 @@ class Tensor:
 
 
 # End of the Tensor class
-
-
