@@ -5,6 +5,19 @@ from typing import List, Tuple
 
 
 def make_pts(N: int) -> List[Tuple[float, float]]:
+    """Generate a list of random (x1, x2) points.
+
+    Args:
+    ----
+    N : int
+        Number of points to generate.
+
+    Returns:
+    -------
+    List[Tuple[float, float]]
+        List of random (x1, x2) points.
+
+    """
     X = []
     for i in range(N):
         x_1 = random.random()
@@ -15,12 +28,39 @@ def make_pts(N: int) -> List[Tuple[float, float]]:
 
 @dataclass
 class Graph:
+    """Represents a simple 2D graph with points and binary labels.
+
+    Attributes
+    ----------
+    N : int
+        Number of points.
+    X : List[Tuple[float, float]]
+        List of points (x1, x2).
+    y : List[int]
+        Binary labels for each point.
+
+    """
+
     N: int
     X: List[Tuple[float, float]]
     y: List[int]
 
 
 def simple(N: int) -> Graph:
+    """Generate a simple dataset where points are labeled based on whether
+    x1 is less than 0.5.
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -30,6 +70,20 @@ def simple(N: int) -> Graph:
 
 
 def diag(N: int) -> Graph:
+    """Generate a dataset where points are labeled based on whether
+    the sum of x1 and x2 is less than 0.5.
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -39,6 +93,20 @@ def diag(N: int) -> Graph:
 
 
 def split(N: int) -> Graph:
+    """Generate a dataset where points are labeled based on whether
+    x1 is less than 0.2 or greater than 0.8.
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -48,6 +116,21 @@ def split(N: int) -> Graph:
 
 
 def xor(N: int) -> Graph:
+    """Generate a dataset using the XOR logic gate for labeling.
+    Points are labeled as 1 if the points are in diagonally opposite
+    quadrants in the unit square.
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -57,6 +140,20 @@ def xor(N: int) -> Graph:
 
 
 def circle(N: int) -> Graph:
+    """Generate a dataset where points are labeled based on whether
+    they lie outside a circle of radius sqrt(0.1) centered at (0.5, 0.5).
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
     X = make_pts(N)
     y = []
     for x_1, x_2 in X:
@@ -67,6 +164,21 @@ def circle(N: int) -> Graph:
 
 
 def spiral(N: int) -> Graph:
+    """Generate a spiral dataset where points are positioned in two spirals
+    and labeled accordingly.
+
+    Args:
+    ----
+    N : int
+        Number of points.
+
+    Returns:
+    -------
+    Graph
+        A graph with points and binary labels.
+
+    """
+
     def x(t: float) -> float:
         return t * math.cos(t) / 20.0
 
