@@ -24,6 +24,7 @@ from .tensor_functions import (
     LT,
     EQ,
 )
+from .operators import Neg
 
 if TYPE_CHECKING:
     from typing import Any, Iterable, List, Optional, Sequence, Tuple, Type, Union
@@ -77,6 +78,8 @@ class Tensor:
         self.history = back
         self.backend = backend
         self.grad = None
+        self._is_boolean = False
+
         if name is not None:
             self.name = name
         else:
@@ -226,10 +229,11 @@ class Tensor:
     def __mul__(self, b: TensorLike) -> Tensor:
         return Mul.apply(self, self._ensure_tensor(b))
 
-    def __neg__(self) -> Tensor:
-        return -self
+    def __neg__(self) -> "Tensor":
+        """Negation of the tensor."""
+        return Neg.apply(self)
 
-    def log(self) -> Tensor:
+    def log(self) -> "Tensor":
         """Apply logarithm to this tensor."""
         return Log.apply(self)
 
@@ -271,11 +275,14 @@ class Tensor:
         """Get the total number of elements in the tensor."""
         return int(operators.prod(self.shape))
 
-    def sum(self) -> Tensor:
-        """Sum over all elements in the tensor."""
-        return Tensor.make(
-            [float(np.sum(self._tensor._storage))], (1,), backend=self.backend
-        )
+    def sum(self, dim: Optional[int] = None) -> Tensor:
+        """Sum over all elements in the tensor, or along a dimension."""
+        if dim is None:
+            return Tensor.make(
+                [float(np.sum(self._tensor._storage))], (1,), backend=self.backend
+            )
+        else:
+            return self.f.add_reduce(self, dim)
 
     def zeros_like(self) -> Tensor:
         """Create a tensor filled with zeros having the same shape as this tensor."""
@@ -289,6 +296,22 @@ class Tensor:
             TensorData(self._tensor._storage, new_shape, new_strides),
             backend=self.backend,
         )
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        """Right addition."""
+        return self.__add__(b)
+
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        """Right multiplication."""
+        return self.__mul__(b)
+
+    def __rsub__(self, b: TensorLike) -> Tensor:
+        """Right subtraction."""
+        return self._ensure_tensor(b).__sub__(self)
+
+    def __rtruediv__(self, b: TensorLike) -> Tensor:
+        """Right division."""
+        return self._ensure_tensor(b).__truediv__(self)
 
     def view(self, *shape: int) -> Tensor:
         """Reshape this tensor to the specified shape."""
@@ -313,6 +336,12 @@ class Tensor:
         result = (self - other).abs() < atol
         result._is_boolean = True  # Custom attribute to indicate it's a boolean tensor
         return result
+    
+    def mean(self, dim: Optional[int] = None) -> Tensor:
+        """Compute the mean over all elements or along a dimension."""
+        total = self.sum(dim)
+        count = self.size if dim is None else self.shape[dim]
+        return total / count
 
     def __bool__(self) -> bool:
         """Allow tensor to be used in boolean contexts if it contains a single boolean value."""
@@ -337,3 +366,5 @@ class Tensor:
 
 
 # End of the Tensor class
+
+

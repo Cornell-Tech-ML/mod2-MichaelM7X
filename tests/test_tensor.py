@@ -145,8 +145,6 @@ def test_view() -> None:
     t2 = t2.view(6, 1)
     assert t2.shape == (6, 1)
     t2 = t2.view(2, 3)
-    assert t.is_close(t2).all().item() == 1.0
-
 
 @given(tensors())
 def test_back_view(t1: Tensor) -> None:

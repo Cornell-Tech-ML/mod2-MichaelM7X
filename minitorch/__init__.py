@@ -33,7 +33,7 @@ from .scalar_functions import *  # noqa: F401,F403
 from .module import *  # noqa: F401,F403
 from .tensor import Tensor
 
-
 def is_close(a: Tensor, b: Tensor, atol: float = 1e-8) -> bool:
     """Check if two tensors are element-wise close within a tolerance."""
-    return a.is_close(b, atol=atol)
+    return a.is_close(b, atol=atol).all()
+
