@@ -18,7 +18,7 @@ Modules:
 - module: Defines the core module class for building neural network layers and models.
 """
 
-from .testing import MathTest, MathTestVariable  # type: ignore # noqa: F401,F403
+from .testing import MathTest, MathTestVariable  # type: ignore  # noqa: D104, F401, F403
 from .tensor_data import *  # noqa: F401,F403
 from .tensor import *  # noqa: F401,F403
 from .tensor_ops import *  # noqa: F401,F403
@@ -31,21 +31,3 @@ from .autodiff import *  # noqa: F401,F403
 from .scalar import *  # noqa: F401,F403
 from .scalar_functions import *  # noqa: F401,F403
 from .module import *  # noqa: F401,F403
-from .tensor import Tensor
-
-
-def is_close(a: Tensor, b: Tensor, atol: float = 1e-8) -> Tensor:
-    """Check if two tensors are element-wise close within a tolerance.
-
-    Args:
-    ----
-        a (Tensor): First tensor to compare.
-        b (Tensor): Second tensor to compare.
-        atol (float, optional): Absolute tolerance. Defaults to 1e-8.
-
-    Returns:
-    -------
-        Tensor: A boolean tensor indicating element-wise closeness.
-
-    """
-    return a.is_close(b, atol=atol).all()

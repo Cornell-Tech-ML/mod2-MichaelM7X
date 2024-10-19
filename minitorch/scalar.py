@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
 
+import numpy as np  # type: ignore
 
 from dataclasses import field
-from .autodiff import Context, Variable, backpropagate
+from .autodiff import Context, Variable, backpropagate, central_difference
 from .scalar_functions import (
     EQ,
     LT,
@@ -25,14 +26,14 @@ ScalarLike = Union[float, int, "Scalar"]
 
 @dataclass
 class ScalarHistory:
-    """ScalarHistory stores the history of `Function` operations that was
+    """`ScalarHistory` stores the history of `Function` operations that was
     used to construct the current Variable.
 
     Attributes
     ----------
-    last_fn : The last Function that was called.
-    ctx : The context for that Function.
-    inputs : The inputs that were given when `last_fn.forward` was called.
+        last_fn : The last Function that was called.
+        ctx : The context for that Function.
+        inputs : The inputs that were given when `last_fn.forward` was called.
 
     """
 
@@ -41,7 +42,7 @@ class ScalarHistory:
     inputs: Sequence[Scalar] = ()
 
 
-## Task 1.2 and 1.4
+# ## Task 1.2 and 1.4
 # Scalar Forward and Backward
 
 _var_count = 0
@@ -52,14 +53,15 @@ class Scalar:
     """A reimplementation of scalar values for autodifferentiation
     tracking. Scalar Variables behave as close as possible to standard
     Python numbers while also tracking the operations that led to the
-    number's creation. They can only be manipulated by `ScalarFunction`.
+    number's creation. They can only be manipulated by
+    `ScalarFunction`.
     """
 
     data: float
     history: Optional[ScalarHistory] = field(default_factory=ScalarHistory)
     derivative: Optional[float] = None
     name: str = field(default="")
-    unique_id: int = field(init=False, default=0)
+    unique_id: int = field(default=0)
 
     def __post_init__(self):
         global _var_count
@@ -90,13 +92,14 @@ class Scalar:
         return self * b
 
     # Variable elements for backprop
+
     def accumulate_derivative(self, x: Any) -> None:
         """Add `val` to the the derivative accumulated on this variable.
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
         ----
-        x: value to be accumulated
+            x: value to be accumulated
 
         """
         assert self.is_leaf(), "Only leaf variables can have derivatives."
@@ -105,38 +108,29 @@ class Scalar:
         self.__setattr__("derivative", self.derivative + x)
 
     def is_leaf(self) -> bool:
-        """True if this variable created by the user (no `last_fn`)"""
+        """True if this variable created by the user (no `last_fn`)."""
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
-        """Answer: return self.history is None"""
+        """True if this variable was created by an operation on constants."""
         return self.history is None
 
     @property
     def parents(self) -> Iterable[Variable]:
-        """Docstring: assert self.history is not None
-        return self.history.inputs
-        """
+        """The parent variables that created this variable."""
         assert self.history is not None
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
-        """Compute the chain rule to backpropagate gradients through the computation graph.
-
-        This method is used to calculate how the output gradient (`d_output`) affects
-        the inputs by applying the chain rule. It retrieves the saved inputs and calls
-        the backward function for the last operation.
+        """Applies the chain rule to the derivative of the current variable.
 
         Args:
         ----
-        d_output : Any
-            The gradient of the output with respect to the current variable.
+            d_output (Any): The derivative of the output with respect to the current variable.
 
         Returns:
         -------
-        Iterable[Tuple[Variable, Any]]
-            An iterable of (input, gradient) pairs where the gradient is the derivative
-            of the output with respect to each input.
+            Iterable[Tuple[Variable, Any]]: The derivatives of the parent variables with respect to the current variable.
 
         """
         h = self.history
@@ -155,63 +149,72 @@ class Scalar:
         Args:
         ----
         d_output (number, opt): starting derivative to backpropagate through the model
-        (typically left out, and assumed to be 1.0).
+                                (typically left out, and assumed to be 1.0).
 
         """
         if d_output is None:
             d_output = 1.0
         backpropagate(self, d_output)
 
-    def __add__(self, b: ScalarLike) -> Scalar:
-        # ASSIGN1.2
-        return Add.apply(self, b)
-        # END ASSIGN1.2
-
+    # TODO: Implement for Task 1.2.
     def __lt__(self, b: ScalarLike) -> Scalar:
-        # ASSIGN1.2
         return LT.apply(self, b)
-        # END ASSIGN1.2
 
     def __gt__(self, b: ScalarLike) -> Scalar:
-        # ASSIGN1.2
         return LT.apply(b, self)
-        # END ASSIGN1.2
-
-    def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
-        # ASSIGN1.2
-        return EQ.apply(b, self)
-        # END ASSIGN1.2
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        # ASSIGN1.2
-        return Add.apply(self, -b)
-        # END ASSIGN1.2
+        return Add.apply(self, Neg.apply(b))
 
     def __neg__(self) -> Scalar:
-        # ASSIGN1.2
         return Neg.apply(self)
-        # END ASSIGN1.2
 
-    def log(self) -> Scalar:
-        """Logarithm function"""
-        # ASSIGN1.2
+    def __add__(self, b: ScalarLike) -> Scalar:
+        return Add.apply(self, b)
+
+    def __eq__(self, b: ScalarLike) -> Scalar:
+        return EQ.apply(self, b)
+
+    def log(self) -> Scalar:  # noqa: D102
         return Log.apply(self)
-        # END ASSIGN1.2
 
-    def exp(self) -> Scalar:
-        """Exponential function"""
-        # ASSIGN1.2
+    def exp(self) -> Scalar:  # noqa: D102
         return Exp.apply(self)
-        # END ASSIGN1.2
 
-    def sigmoid(self) -> Scalar:
-        """Sigmoid function"""
-        # ASSIGN1.2
+    def sigmoid(self) -> Scalar:  # noqa: D102
         return Sigmoid.apply(self)
-        # END ASSIGN1.2
 
-    def relu(self) -> Scalar:
-        """ReLU function"""
-        # ASSIGN1.2
+    def relu(self) -> Scalar:  # noqa: D102
         return ReLU.apply(self)
-        # END ASSIGN1.2
+
+    # raise NotImplementedError("Need to implement for Task 1.2")
+
+
+def derivative_check(f: Any, *scalars: Scalar) -> None:
+    """Checks that autodiff works on a python function.
+    Asserts False if derivative is incorrect.
+
+    Args:
+    ----
+        f: Function from n-scalars to 1-scalar.
+        *scalars: Input scalar values.
+
+    """
+    out = f(*scalars)
+    out.backward()
+
+    err_msg = """
+Derivative check at arguments f(%s) and received derivative f'=%f for argument %d,
+but was expecting derivative f'=%f from central difference."""
+    for i, x in enumerate(scalars):
+        check = central_difference(f, *scalars, arg=i)
+        print(str([x.data for x in scalars]), x.derivative, i, check)
+        assert x.derivative is not None
+        np.testing.assert_allclose(
+            x.derivative,
+            check.data,
+            1e-2,
+            1e-2,
+            err_msg=err_msg
+            % (str([x.data for x in scalars]), x.derivative, i, check.data),
+        )

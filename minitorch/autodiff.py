@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Tuple, Protocol
+from typing import Any, Iterable, Tuple, Protocol, List
 
 
-## Task 1.1
+# ## Task 1.1
 # Central Difference calculation
 
 
@@ -15,57 +15,47 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
 
     Args:
     ----
-    f : arbitrary function from n-scalar args to one value
-    *vals : n-float values $x_0 \ldots x_{n-1}$
-    arg : the number $i$ of the arg to compute the derivative
-    epsilon : a small constant
+        f : arbitrary function from n-scalar args to one value
+        *vals : n-float values $x_0 \ldots x_{n-1}$
+        arg : the number $i$ of the arg to compute the derivative
+        epsilon : a small constant
 
     Returns:
     -------
-    An approximation of $f'_i(x_0, \ldots, x_{n-1})$
+        An approximation of $f'_i(x_0, \ldots, x_{n-1})$
 
     """
-    ## ASSIGN1.1
-    vals1 = [v for v in vals]
-    vals2 = [v for v in vals]
-    vals1[arg] = vals1[arg] + epsilon
-    vals2[arg] = vals2[arg] - epsilon
-    delta = f(*vals1) - f(*vals2)
-    return delta / (2 * epsilon)
-    ## END ASSIGN1.1
+    # TODO: Implement for Task 1.1.
+    vals_list = list(vals)
+    vals_list[arg] += epsilon
+    f_plus = f(*vals_list)
+
+    # Compute f(vals[arg] - epsilon)
+    vals_list[arg] -= 2 * epsilon
+    f_minus = f(*vals_list)
+
+    # Return the central difference approximation of the derivative
+    return (f_plus - f_minus) / (2 * epsilon)
+    raise NotImplementedError("Need to implement for Task 1.1")
 
 
 variable_count = 1
 
 
 class Variable(Protocol):
-    """Protocol for differentiable variables in the computation graph."""
-
-    def accumulate_derivative(self, x: Any) -> None:
-        """Accumulates the derivative for this variable."""
-        ...
+    def accumulate_derivative(self, x: Any) -> None: ...  # noqa: D102
 
     @property
-    def unique_id(self) -> int:
-        """Returns a unique ID for the variable."""
-        ...
+    def unique_id(self) -> int: ...  # noqa: D102
 
-    def is_leaf(self) -> bool:
-        """Checks if the variable is a leaf node in the computation graph."""
-        ...
+    def is_leaf(self) -> bool: ...  # noqa: D102
 
-    def is_constant(self) -> bool:
-        """Checks if the variable is constant."""
-        ...
+    def is_constant(self) -> bool: ...  # noqa: D102
 
     @property
-    def parents(self) -> Iterable[Variable]:
-        """Returns the parent variables in the computation graph."""
-        ...
+    def parents(self) -> Iterable["Variable"]: ...  # noqa: D102
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
-        """Computes the chain rule for the variable."""
-        ...
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...  # noqa: D102
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
@@ -73,14 +63,13 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     Args:
     ----
-    variable: The right-most variable in the graph.
+    variable: The right-most variable
 
     Returns:
     -------
-    Non-constant variables in topological order starting from the right.
+    Non-constant Variables in topological order starting from the right.
 
     """
-    # ASSIGN1.4
     order: List[Variable] = []
     seen = set()
 
@@ -96,66 +85,61 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
 
     visit(variable)
     return order
-    # END ASSIGN1.4
+    # raise NotImplementedError("Need to implement for Task 1.4")
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
-    """Runs backpropagation on the computation graph in order to compute derivatives for the leaf nodes.
+    """Runs backpropagation on the computation graph to compute derivatives for the leaf nodes.
 
     Args:
     ----
-    variable: The right-most variable.
-    deriv: Its derivative that we want to propagate backward to the leaves.
+        variable: The right-most variable.
+        deriv: The derivative we want to propagate backward to the leaves.
 
     Returns:
     -------
-    None. The result is written to the derivative values of each leaf through `accumulate_derivative`.
+        None: Updates the derivative values of each leaf through accumulate_derivative`.
 
     """
-    # ASSIGN1.4
-    queue = topological_sort(variable)
-    derivatives = {}
-    derivatives[variable.unique_id] = deriv
-    for var in queue:
-        deriv = derivatives[var.unique_id]
-        if var.is_leaf():
-            var.accumulate_derivative(deriv)
-        else:
-            for v, d in var.chain_rule(deriv):
-                if v.is_constant():
-                    continue
-                derivatives.setdefault(v.unique_id, 0.0)
-                derivatives[v.unique_id] = derivatives[v.unique_id] + d
-    # END ASSIGN1.4
+    # TODO: Implement for Task 1.4.
+    # Dictionary to store derivatives for each variable
+    derivatives_dict = {variable.unique_id: deriv}
+
+    top_sort = topological_sort(variable)
+
+    # Iterate through the topological order and calculate the derivatives
+    for curr_var in top_sort:
+        if curr_var.is_leaf():
+            continue
+
+        # Get the derivatives of the current variable
+        var_n_der = curr_var.chain_rule(derivatives_dict[curr_var.unique_id])
+
+        # Accumulate the derivative for each parent of the current variable
+        for var, deriv in var_n_der:
+            if var.is_leaf():
+                var.accumulate_derivative(deriv)
+            else:
+                if var.unique_id not in derivatives_dict:
+                    derivatives_dict[var.unique_id] = deriv
+                else:
+                    derivatives_dict[var.unique_id] += deriv
+    # raise NotImplementedError("Need to implement for Task 1.4")
 
 
 @dataclass
 class Context:
-    """Context class used by `Function` to store information during the forward pass.
-
-    Attributes
-    ----------
-    no_grad: Flag to indicate if gradients are being tracked.
-    saved_values: Values saved during the forward pass to be used in the backward pass.
-
-    """
+    """Context class is used by `Function` to store information during the forward pass."""
 
     no_grad: bool = False
     saved_values: Tuple[Any, ...] = ()
 
     def save_for_backward(self, *values: Any) -> None:
-        """Store the given `values` if they need to be used during backpropagation.
-
-        Args:
-        ----
-        values: The values to store for later use.
-
-        """
+        """Store the given `values` if they need to be used during backpropagation."""
         if self.no_grad:
             return
         self.saved_values = values
 
     @property
-    def saved_tensors(self) -> Tuple[Any, ...]:
-        """Returns the saved tensors from the forward pass."""
+    def saved_tensors(self) -> Tuple[Any, ...]:  # noqa: D102
         return self.saved_values
