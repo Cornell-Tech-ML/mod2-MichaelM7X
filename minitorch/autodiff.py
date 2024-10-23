@@ -26,16 +26,14 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
 
     """
     # TODO: Implement for Task 1.1.
-    vals_list = list(vals)
-    vals_list[arg] += epsilon
-    f_plus = f(*vals_list)
-
-    # Compute f(vals[arg] - epsilon)
-    vals_list[arg] -= 2 * epsilon
-    f_minus = f(*vals_list)
-
-    # Return the central difference approximation of the derivative
-    return (f_plus - f_minus) / (2 * epsilon)
+    # ASSIGN1.1
+    vals1 = [v for v in vals]
+    vals2 = [v for v in vals]
+    vals1[arg] = vals1[arg] + epsilon
+    vals2[arg] = vals2[arg] - epsilon
+    delta = f(*vals1) - f(*vals2)
+    return delta / (2 * epsilon)
+    # END ASSIGN1.1
     raise NotImplementedError("Need to implement for Task 1.1")
 
 
@@ -102,28 +100,21 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     """
     # TODO: Implement for Task 1.4.
-    # Dictionary to store derivatives for each variable
-    derivatives_dict = {variable.unique_id: deriv}
-
-    top_sort = topological_sort(variable)
-
-    # Iterate through the topological order and calculate the derivatives
-    for curr_var in top_sort:
-        if curr_var.is_leaf():
-            continue
-
-        # Get the derivatives of the current variable
-        var_n_der = curr_var.chain_rule(derivatives_dict[curr_var.unique_id])
-
-        # Accumulate the derivative for each parent of the current variable
-        for var, deriv in var_n_der:
-            if var.is_leaf():
-                var.accumulate_derivative(deriv)
-            else:
-                if var.unique_id not in derivatives_dict:
-                    derivatives_dict[var.unique_id] = deriv
-                else:
-                    derivatives_dict[var.unique_id] += deriv
+    # ASSIGN1.4
+    queue = topological_sort(variable)
+    derivatives = {}
+    derivatives[variable.unique_id] = deriv
+    for var in queue:
+        deriv = derivatives[var.unique_id]
+        if var.is_leaf():
+            var.accumulate_derivative(deriv)
+        else:
+            for v, d in var.chain_rule(deriv):
+                if v.is_constant():
+                    continue
+                derivatives.setdefault(v.unique_id, 0.0)
+                derivatives[v.unique_id] = derivatives[v.unique_id] + d
+    # END ASSIGN1.4
     # raise NotImplementedError("Need to implement for Task 1.4")
 
 

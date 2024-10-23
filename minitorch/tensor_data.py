@@ -49,9 +49,9 @@ def index_to_position(index: Index, strides: Strides) -> int:
     # Initialize position as 0
     position = 0
 
-    # Loop through each dimension and accumulate the stride multiplied by the index value
-    for i, stride in zip(index, strides):
-        position += i * stride
+    # Iterate over the index and corresponding stride, accumulating the product
+    for idx, stride in zip(index, strides):
+        position += idx * stride
 
     return position
 
@@ -69,12 +69,12 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    # Loop through dimensions in reverse order (last to first)
-    for i in reversed(range(len(shape))):
-        # Calculate the current index for dimension `i`
-        out_index[i] = ordinal % shape[i]
-        # Update ordinal for the next iteration
-        ordinal //= shape[i]
+    # Iterate over each dimension from the last to the first
+    for dim in range(len(shape) - 1, -1, -1):
+        # Determine the current dimension's index
+        out_index[dim] = ordinal % shape[dim]
+        # Reduce the ordinal for the next dimension calculation
+        ordinal //= shape[dim]
 
 
 def broadcast_index(
@@ -98,9 +98,12 @@ def broadcast_index(
         None
 
     """
-    for i, s in enumerate(shape):
-        if s > 1:
-            out_index[i] = big_index[i + (len(big_shape) - len(shape))]
+    # Loop through each dimension of the smaller shape
+    offset = len(big_shape) - len(shape)
+    for i, dim in enumerate(shape):
+        # Map index from corresponding larger tensor dimension or set to 0
+        if dim > 1:
+            out_index[i] = big_index[i + offset]
         else:
             out_index[i] = 0
     return None
@@ -123,16 +126,17 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
 
     """
-    # Reverse the shapes to align dimensions from the right
-    shape1 = list(shape1)[::-1]
-    shape2 = list(shape2)[::-1]
+    # Reverse the shapes to align dimensions from the least significant end
+    shape1_reversed = list(shape1)[::-1]
+    shape2_reversed = list(shape2)[::-1]
 
-    max_len = max(len(shape1), len(shape2))
+    max_len = max(len(shape1_reversed), len(shape2_reversed))
     broadcast_shape = []
 
     for i in range(max_len):
-        dim1 = shape1[i] if i < len(shape1) else 1
-        dim2 = shape2[i] if i < len(shape2) else 1
+        dim1 = shape1_reversed[i] if i < len(shape1_reversed) else 1
+        dim2 = shape2_reversed[i] if i < len(shape2_reversed) else 1
+
         if dim1 == dim2:
             broadcast_shape.append(dim1)
         elif dim1 == 1:
@@ -140,10 +144,10 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         elif dim2 == 1:
             broadcast_shape.append(dim1)
         else:
-            raise IndexingError("Cannot broadcast shapes.")
+            raise IndexingError("Shapes cannot be broadcast together.")
 
+    # Reverse the final shape to restore original order
     return tuple(broadcast_shape[::-1])
-
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
     """Return a contiguous stride for a shape"""

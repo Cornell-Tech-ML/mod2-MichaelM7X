@@ -45,15 +45,13 @@ class Linear(minitorch.Module):
             )
 
     def forward(self, inputs):
-        # TODO: Implement for Task 1.5.
-        # Perform Wx + b for each output node
-        outputs = []
-        for j in range(len(self.bias)):  # Iterate over output size
-            output = self.bias[j].value
-            for i in range(len(inputs)):  # Iterate over input size
-                output += inputs[i] * self.weights[i][j].value
-            outputs.append(output)
-        return outputs
+        # ASSIGN1.5
+        y = [b.value for b in self.bias]
+        for i, x in enumerate(inputs):
+            for j in range(len(y)):
+                y[j] = y[j] + x * self.weights[i][j].value
+        return y
+        # END ASSIGN1.5
 
 
 def default_log_fn(epoch, total_loss, correct, losses):

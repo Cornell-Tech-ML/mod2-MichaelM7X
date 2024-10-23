@@ -157,36 +157,59 @@ class Scalar:
         backpropagate(self, d_output)
 
     # TODO: Implement for Task 1.2.
+    def __add__(self, b: ScalarLike) -> Scalar:
+    # ASSIGN1.2
+        return Add.apply(self, b)
+    # END ASSIGN1.2
+
     def __lt__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
         return LT.apply(self, b)
+        # END ASSIGN1.2
 
     def __gt__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
         return LT.apply(b, self)
+        # END ASSIGN1.2
+
+    def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
+        # ASSIGN1.2
+        return EQ.apply(b, self)
+        # END ASSIGN1.2
 
     def __sub__(self, b: ScalarLike) -> Scalar:
-        return Add.apply(self, Neg.apply(b))
+        # ASSIGN1.2
+        return Add.apply(self, -b)
+        # END ASSIGN1.2
 
     def __neg__(self) -> Scalar:
+        # ASSIGN1.2
         return Neg.apply(self)
+        # END ASSIGN1.2
 
-    def __add__(self, b: ScalarLike) -> Scalar:
-        return Add.apply(self, b)
-
-    def __eq__(self, b: ScalarLike) -> Scalar:
-        return EQ.apply(self, b)
-
-    def log(self) -> Scalar:  # noqa: D102
+    def log(self) -> Scalar:
+        """Logarithm function"""
+        # ASSIGN1.2
         return Log.apply(self)
+        # END ASSIGN1.2
 
-    def exp(self) -> Scalar:  # noqa: D102
+    def exp(self) -> Scalar:
+        """Exponential function"""
+        # ASSIGN1.2
         return Exp.apply(self)
+        # END ASSIGN1.2
 
-    def sigmoid(self) -> Scalar:  # noqa: D102
+    def sigmoid(self) -> Scalar:
+        """Sigmoid function"""
+        # ASSIGN1.2
         return Sigmoid.apply(self)
+        # END ASSIGN1.2
 
-    def relu(self) -> Scalar:  # noqa: D102
+    def relu(self) -> Scalar:
+        """ReLU function"""
+        # ASSIGN1.2
         return ReLU.apply(self)
-
+        # END ASSIGN1.2
     # raise NotImplementedError("Need to implement for Task 1.2")
 
 

@@ -237,24 +237,20 @@ class SimpleOps(TensorOps):
 
 # Implementations.
 
-
 def tensor_map(
     fn: Callable[[float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
-    """Low-level implementation of tensor map between
-    tensors with *possibly different strides*.
+    """Low-level implementation of tensor map between tensors with *possibly different strides*.
 
     Simple version:
 
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      are the same size.
+    * Apply the function `fn` element-wise to fill the `out` storage based on 
+      corresponding values in `in_storage`, assuming `out_shape` and `in_shape` have the same size.
 
     Broadcasted version:
 
-    * Fill in the `out` array by applying `fn` to each
-      value of `in_storage` assuming `out_shape` and `in_shape`
-      broadcast. (`in_shape` must be smaller than `out_shape`).
+    * Fill in the `out` array by applying `fn` element-wise, using broadcasting 
+      rules if `in_shape` is smaller than `out_shape`.
 
     Args:
     ----
@@ -274,41 +270,42 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        out_index = np.zeros(MAX_DIMS, np.int32)
-        in_index = np.zeros(MAX_DIMS, np.int32)
-        for i in range(len(out)):
-            to_index(i, out_shape, out_index)
-            broadcast_index(out_index, out_shape, in_shape, in_index)
-            o = index_to_position(out_index, out_strides)
-            j = index_to_position(in_index, in_strides)
-            out[o] = fn(in_storage[j])
+        out_idx = np.zeros(MAX_DIMS, dtype=np.int32)
+        in_idx = np.zeros(MAX_DIMS, dtype=np.int32)
+
+        for position in range(len(out)):
+            # Convert the flat index to multi-dimensional indices
+            to_index(position, out_shape, out_idx)
+            # Map the out_index to in_index following broadcasting rules
+            broadcast_index(out_idx, out_shape, in_shape, in_idx)
+            # Compute the flat positions
+            out_pos = index_to_position(out_idx, out_strides)
+            in_pos = index_to_position(in_idx, in_strides)
+            # Apply the function to the corresponding elements
+            out[out_pos] = fn(in_storage[in_pos])
 
     return _map
-
 
 def tensor_zip(
     fn: Callable[[float, float], float],
 ) -> Callable[
     [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
 ]:
-    """Low-level implementation of tensor zip between
-    tensors with *possibly different strides*.
+    """Low-level implementation of tensor zip between tensors with *possibly different strides*.
 
     Simple version:
 
-    * Fill in the `out` array by applying `fn` to each
-      value of `a_storage` and `b_storage` assuming `out_shape`
-      and `a_shape` are the same size.
+    * Apply the function `fn` to corresponding values from `a_storage` and `b_storage`,
+      assuming the shapes of `out`, `a`, and `b` are the same size.
 
     Broadcasted version:
 
-    * Fill in the `out` array by applying `fn` to each
-      value of `a_storage` and `b_storage` assuming `a_shape`
-      and `b_shape` broadcast to `out_shape`.
+    * Apply the function `fn` to corresponding elements from `a_storage` and `b_storage`,
+      using broadcasting rules for `a_shape` and `b_shape` to fill `out`.
 
     Args:
     ----
-        fn: function mapping two floats to float to apply
+        fn: function mapping two floats to a single float to apply
 
     Returns:
     -------
@@ -327,19 +324,25 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        out_index = np.zeros(MAX_DIMS, np.int32)
-        a_index = np.zeros(MAX_DIMS, np.int32)
-        b_index = np.zeros(MAX_DIMS, np.int32)
-        for i in range(len(out)):
-            to_index(i, out_shape, out_index)
-            o = index_to_position(out_index, out_strides)
-            broadcast_index(out_index, out_shape, a_shape, a_index)
-            broadcast_index(out_index, out_shape, b_shape, b_index)
-            aj = index_to_position(a_index, a_strides)
-            bj = index_to_position(b_index, b_strides)
-            out[o] = fn(a_storage[aj], b_storage[bj])
+        out_idx = np.zeros(MAX_DIMS, dtype=np.int32)
+        a_idx = np.zeros(MAX_DIMS, dtype=np.int32)
+        b_idx = np.zeros(MAX_DIMS, dtype=np.int32)
+
+        for pos in range(len(out)):
+            # Get the multi-dimensional index for the output tensor
+            to_index(pos, out_shape, out_idx)
+            # Map the out_index to in_index based on broadcasting rules
+            broadcast_index(out_idx, out_shape, a_shape, a_idx)
+            broadcast_index(out_idx, out_shape, b_shape, b_idx)
+            # Calculate flat positions in the storage arrays
+            out_pos = index_to_position(out_idx, out_strides)
+            a_pos = index_to_position(a_idx, a_strides)
+            b_pos = index_to_position(b_idx, b_strides)
+            # Apply the function on corresponding elements
+            out[out_pos] = fn(a_storage[a_pos], b_storage[b_pos])
 
     return _zip
+
 
 
 def tensor_reduce(
