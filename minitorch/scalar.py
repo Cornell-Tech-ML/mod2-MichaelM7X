@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
 
-import numpy as np
+import numpy as np  # type: ignore
 
 from dataclasses import field
 from .autodiff import Context, Variable, backpropagate, central_difference
@@ -108,50 +108,121 @@ class Scalar:
         self.__setattr__("derivative", self.derivative + x)
 
     def is_leaf(self) -> bool:
-        """True if this variable created by the user (no `last_fn`)"""
+        """True if this variable created by the user (no `last_fn`)."""
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
+        """True if this variable was created by an operation on constants."""
         return self.history is None
 
     @property
     def parents(self) -> Iterable[Variable]:
-        """Get the variables used to create this one."""
+        """The parent variables that created this variable."""
         assert self.history is not None
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """Applies the chain rule to the derivative of the current variable.
+
+        Args:
+        ----
+            d_output (Any): The derivative of the output with respect to the current variable.
+
+        Returns:
+        -------
+            Iterable[Tuple[Variable, Any]]: The derivatives of the parent variables with respect to the current variable.
+
+        """
         h = self.history
         assert h is not None
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        # ASSIGN1.3
+        x = h.last_fn._backward(h.ctx, d_output)
+        return list(zip(h.inputs, x))
+        # END ASSIGN1.3
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
 
         Args:
         ----
-            d_output (number, opt): starting derivative to backpropagate through the model
-                                   (typically left out, and assumed to be 1.0).
+        d_output (number, opt): starting derivative to backpropagate through the model
+                                (typically left out, and assumed to be 1.0).
 
         """
         if d_output is None:
             d_output = 1.0
         backpropagate(self, d_output)
 
-    raise NotImplementedError("Need to include this file from past assignment.")
+    # TODO: Implement for Task 1.2.
+    def __add__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
+        return Add.apply(self, b)
+
+    # END ASSIGN1.2
+
+    def __lt__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
+        return LT.apply(self, b)
+        # END ASSIGN1.2
+
+    def __gt__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
+        return LT.apply(b, self)
+        # END ASSIGN1.2
+
+    def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
+        # ASSIGN1.2
+        return EQ.apply(b, self)
+        # END ASSIGN1.2
+
+    def __sub__(self, b: ScalarLike) -> Scalar:
+        # ASSIGN1.2
+        return Add.apply(self, -b)
+        # END ASSIGN1.2
+
+    def __neg__(self) -> Scalar:
+        # ASSIGN1.2
+        return Neg.apply(self)
+        # END ASSIGN1.2
+
+    def log(self) -> Scalar:
+        """Logarithm function"""
+        # ASSIGN1.2
+        return Log.apply(self)
+        # END ASSIGN1.2
+
+    def exp(self) -> Scalar:
+        """Exponential function"""
+        # ASSIGN1.2
+        return Exp.apply(self)
+        # END ASSIGN1.2
+
+    def sigmoid(self) -> Scalar:
+        """Sigmoid function"""
+        # ASSIGN1.2
+        return Sigmoid.apply(self)
+        # END ASSIGN1.2
+
+    def relu(self) -> Scalar:
+        """ReLU function"""
+        # ASSIGN1.2
+        return ReLU.apply(self)
+        # END ASSIGN1.2
+
+    # raise NotImplementedError("Need to implement for Task 1.2")
 
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
     """Checks that autodiff works on a python function.
     Asserts False if derivative is incorrect.
 
-    Parameters
-    ----------
-        f : function from n-scalars to 1-scalar.
-        *scalars  : n input scalar values.
+    Args:
+    ----
+        f: Function from n-scalars to 1-scalar.
+        *scalars: Input scalar values.
 
     """
     out = f(*scalars)
