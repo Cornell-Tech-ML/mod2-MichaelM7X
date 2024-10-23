@@ -149,6 +149,7 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     # Reverse the final shape to restore original order
     return tuple(broadcast_shape[::-1])
 
+
 def strides_from_shape(shape: UserShape) -> UserStrides:
     """Return a contiguous stride for a shape"""
     layout = [1]

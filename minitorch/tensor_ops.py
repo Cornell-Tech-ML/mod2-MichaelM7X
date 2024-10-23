@@ -237,6 +237,7 @@ class SimpleOps(TensorOps):
 
 # Implementations.
 
+
 def tensor_map(
     fn: Callable[[float], float],
 ) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
@@ -244,12 +245,12 @@ def tensor_map(
 
     Simple version:
 
-    * Apply the function `fn` element-wise to fill the `out` storage based on 
+    * Apply the function `fn` element-wise to fill the `out` storage based on
       corresponding values in `in_storage`, assuming `out_shape` and `in_shape` have the same size.
 
     Broadcasted version:
 
-    * Fill in the `out` array by applying `fn` element-wise, using broadcasting 
+    * Fill in the `out` array by applying `fn` element-wise, using broadcasting
       rules if `in_shape` is smaller than `out_shape`.
 
     Args:
@@ -285,6 +286,7 @@ def tensor_map(
             out[out_pos] = fn(in_storage[in_pos])
 
     return _map
+
 
 def tensor_zip(
     fn: Callable[[float, float], float],
@@ -342,7 +344,6 @@ def tensor_zip(
             out[out_pos] = fn(a_storage[a_pos], b_storage[b_pos])
 
     return _zip
-
 
 
 def tensor_reduce(

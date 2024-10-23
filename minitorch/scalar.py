@@ -158,8 +158,9 @@ class Scalar:
 
     # TODO: Implement for Task 1.2.
     def __add__(self, b: ScalarLike) -> Scalar:
-    # ASSIGN1.2
+        # ASSIGN1.2
         return Add.apply(self, b)
+
     # END ASSIGN1.2
 
     def __lt__(self, b: ScalarLike) -> Scalar:
@@ -210,6 +211,7 @@ class Scalar:
         # ASSIGN1.2
         return ReLU.apply(self)
         # END ASSIGN1.2
+
     # raise NotImplementedError("Need to implement for Task 1.2")
 
 

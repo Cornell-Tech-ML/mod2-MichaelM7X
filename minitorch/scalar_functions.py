@@ -171,6 +171,7 @@ class Sigmoid(ScalarFunction):
         return sigma * (1.0 - sigma) * d_output
         # END ASSIGN1.4
 
+
 class ReLU(ScalarFunction):
     """ReLU function"""
 
